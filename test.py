@@ -90,101 +90,101 @@ def draw_lines(img, lines, color = [52, 152, 219], thickness = 2):
     positiveY2Sum = 0
     negativeY2Sum = 0
 
-    for line in lines:
-        for x1, y1, x2, y2 in line:
-            slope = ((y2 - y1)/(x2 - x1))
+    if lines is not None:
+        for line in lines:
+            for x1, y1, x2, y2 in line:
+                slope = ((y2 - y1)/(x2 - x1))
 
-            if(slope > 0):
-                # positive (ie left lane)
-                positiveLines += 1
-                positiveSlopeSum += slope
-                positiveX1Sum += x1
-                positiveY1Sum += y1
-                positiveX2Sum += x2
-                positiveY2Sum += y2
+                if(slope > 0):
+                    # positive (ie left lane)
+                    positiveLines += 1
+                    positiveSlopeSum += slope
+                    positiveX1Sum += x1
+                    positiveY1Sum += y1
+                    positiveX2Sum += x2
+                    positiveY2Sum += y2
+                else:
+                    negativeLines += 1
+                    negativeSlopeSum += slope
+                    negativeX1Sum += x1
+                    negativeY1Sum += y1
+                    negativeX2Sum += x2
+                    negativeY2Sum += y2
+
+        if(positiveLines):
+            # left lane
+
+            positiveSlopeAverage = positiveSlopeSum / positiveLines
+            positiveX1Average = positiveX1Sum / positiveLines
+            positiveX2Average = positiveX2Sum / positiveLines
+            positiveY1Average = positiveY1Sum / positiveLines
+            positiveY2Average = positiveY2Sum / positiveLines
+
+            cv2.putText(img, "left lane slope: %.4f" % positiveSlopeAverage, (10, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+            cv2.putText(img, "x1: %.4f" % positiveX1Average, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+            cv2.putText(img, "y1: %.4f" % positiveY1Average, (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+            cv2.putText(img, "x2: %.4f" % positiveX2Average, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+            cv2.putText(img, "y2: %.4f" % positiveY2Average, (10, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+
+            cv2.line(img, (int(positiveX1Average), int(positiveY1Average)), (int(positiveX2Average), int(positiveY2Average)), color, thickness + 5)
+
+        if(negativeLines):
+            # right lane
+
+            negativeSlopeAverage = negativeSlopeSum / negativeLines
+            negativeX1Average = negativeX1Sum / negativeLines
+            negativeX2Average = negativeX2Sum / negativeLines
+            negativeY1Average = negativeY1Sum / negativeLines
+            negativeY2Average = negativeY2Sum / negativeLines
+
+            cv2.putText(img, "right lane slope: %.4f" % negativeSlopeAverage, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+            cv2.putText(img, "x1: %.4f" % negativeX1Average, (10, 105), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+            cv2.putText(img, "y1: %.4f" % negativeY1Average, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+            cv2.putText(img, "x2: %.4f" % negativeX2Average, (10, 135), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+            cv2.putText(img, "y2: %.4f" % negativeY2Average, (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+
+            cv2.line(img, (int(negativeX1Average), int(negativeY1Average)), (int(negativeX2Average), int(negativeY2Average)), color, thickness + 5)
+
+        if(positiveLines and negativeLines):
+
+            # right lane
+            negativeSlopeAverage = negativeSlopeSum / negativeLines
+
+            # left lane
+            positiveSlopeAverage = positiveSlopeSum / positiveLines
+
+            laneBias = negativeSlopeAverage + positiveSlopeAverage
+
+            steeringColor = (255, 000, 000)
+
+            if(laneBias > 0.2):
+                steeringColor = (255, 255, 000)
+                cv2.putText(img, "Suggested correction: VEER LEFT", (10, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+            elif(laneBias < -0.2):
+                steeringColor = (255, 255, 000)
+                cv2.putText(img, "Suggested correction: VEER RIGHT", (10, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
             else:
-                negativeLines += 1
-                negativeSlopeSum += slope
-                negativeX1Sum += x1
-                negativeY1Sum += y1
-                negativeX2Sum += x2
-                negativeY2Sum += y2
+                steeringColor = (000, 255, 000)
+                cv2.putText(img, "Suggested correction: CONT STRAIGHT", (10, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
 
-    if(positiveLines):
-        # left lane
+            cv2.line(img, (10, 180), (210, 180), (255, 255, 255), 2)
 
-        positiveSlopeAverage = positiveSlopeSum / positiveLines
-        positiveX1Average = positiveX1Sum / positiveLines
-        positiveX2Average = positiveX2Sum / positiveLines
-        positiveY1Average = positiveY1Sum / positiveLines
-        positiveY2Average = positiveY2Sum / positiveLines
+            if(not np.isinf(laneBias)):
+                scalingFactor = 100 / (abs(negativeSlopeAverage) + abs(positiveSlopeAverage))
 
-        cv2.putText(img, "left lane slope: %.4f" % positiveSlopeAverage, (10, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-        cv2.putText(img, "x1: %.4f" % positiveX1Average, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-        cv2.putText(img, "y1: %.4f" % positiveY1Average, (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-        cv2.putText(img, "x2: %.4f" % positiveX2Average, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-        cv2.putText(img, "y2: %.4f" % positiveY2Average, (10, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+                drivingXPosition = int(laneBias * scalingFactor) + 100
 
-        cv2.line(img, (int(positiveX1Average), int(positiveY1Average)), (int(positiveX2Average), int(positiveY2Average)), color, thickness + 5)
+                cv2.circle(img, ((10 + drivingXPosition), 180), 8, steeringColor, 5)
+            else:
+                cv2.circle(img, ((10 + 100), 180), 8, steeringColor, 5)
 
-    if(negativeLines):
-        # right lane
+            if(negativeSlopeAverage < -0.95 or positiveSlopeAverage > 0.95 or negativeSlopeAverage > 0.05 or positiveSlopeAverage < -0.05):
+                cv2.putText(img, "DEPARTING LANE", (10, 195), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 000), 2)
 
-        negativeSlopeAverage = negativeSlopeSum / negativeLines
-        negativeX1Average = negativeX1Sum / negativeLines
-        negativeX2Average = negativeX2Sum / negativeLines
-        negativeY1Average = negativeY1Sum / negativeLines
-        negativeY2Average = negativeY2Sum / negativeLines
-
-        cv2.putText(img, "right lane slope: %.4f" % negativeSlopeAverage, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-        cv2.putText(img, "x1: %.4f" % negativeX1Average, (10, 105), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-        cv2.putText(img, "y1: %.4f" % negativeY1Average, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-        cv2.putText(img, "x2: %.4f" % negativeX2Average, (10, 135), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-        cv2.putText(img, "y2: %.4f" % negativeY2Average, (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-
-        cv2.line(img, (int(negativeX1Average), int(negativeY1Average)), (int(negativeX2Average), int(negativeY2Average)), color, thickness + 5)
-
-    if(positiveLines and negativeLines):
-
-        # right lane
-        negativeSlopeAverage = negativeSlopeSum / negativeLines
-
-        # left lane
-        positiveSlopeAverage = positiveSlopeSum / positiveLines
-
-        laneBias = negativeSlopeAverage + positiveSlopeAverage
-
-        steeringColor = (255, 000, 000)
-
-        if(laneBias > 0.2):
-            steeringColor = (255, 255, 000)
-            cv2.putText(img, "Suggested correction: VEER LEFT", (10, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-        elif(laneBias < -0.2):
-            steeringColor = (255, 255, 000)
-            cv2.putText(img, "Suggested correction: VEER RIGHT", (10, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-        else:
-            steeringColor = (000, 255, 000)
-            cv2.putText(img, "Suggested correction: CONT STRAIGHT", (10, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
-
-        cv2.line(img, (10, 180), (210, 180), (255, 255, 255), 2)
-
-        if(not np.isinf(laneBias)):
-            scalingFactor = 100 / (abs(negativeSlopeAverage) + abs(positiveSlopeAverage))
-
-            drivingXPosition = int(laneBias * scalingFactor) + 100
-
-            cv2.circle(img, ((10 + drivingXPosition), 180), 8, steeringColor, 5)
-        else:
-            cv2.circle(img, ((10 + 100), 180), 8, steeringColor, 5)
-
-        if(negativeSlopeAverage < -0.95 or positiveSlopeAverage > 0.95 or negativeSlopeAverage > 0.05 or positiveSlopeAverage < -0.05):
-            cv2.putText(img, "DEPARTING LANE", (10, 195), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 000), 2)
-
-
-    #saving just in case - previous implementation
-    for line in lines:
-        for x1,y1,x2,y2 in line:
-            cv2.line(img, (x1, y1), (x2, y2), [255, 0, 0], thickness)
+        #saving just in case - previous implementation
+        for line in lines:
+            for x1,y1,x2,y2 in line:
+                cv2.line(img, (x1, y1), (x2, y2), [255, 0, 0], thickness)
 
 def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
     """
