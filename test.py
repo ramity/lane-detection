@@ -119,7 +119,11 @@ def draw_lines(img, lines, color = [52, 152, 219], thickness = 2):
         positiveY1Average = positiveY1Sum / positiveLines
         positiveY2Average = positiveY2Sum / positiveLines
 
-        cv2.putText(img, "left lane slope: %.4f" % positiveSlopeAverage, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 000, 255), 2)
+        cv2.putText(img, "left lane slope: %.4f" % positiveSlopeAverage, (10, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+        cv2.putText(img, "x1: %.4f" % positiveX1Average, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+        cv2.putText(img, "y1: %.4f" % positiveY1Average, (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+        cv2.putText(img, "x2: %.4f" % positiveX2Average, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+        cv2.putText(img, "y2: %.4f" % positiveY2Average, (10, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
 
         cv2.line(img, (int(positiveX1Average), int(positiveY1Average)), (int(positiveX2Average), int(positiveY2Average)), color, thickness + 5)
 
@@ -132,7 +136,11 @@ def draw_lines(img, lines, color = [52, 152, 219], thickness = 2):
         negativeY1Average = negativeY1Sum / negativeLines
         negativeY2Average = negativeY2Sum / negativeLines
 
-        cv2.putText(img, "right lane slope: %.4f" % negativeSlopeAverage, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 000, 255), 2)
+        cv2.putText(img, "right lane slope: %.4f" % negativeSlopeAverage, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+        cv2.putText(img, "x1: %.4f" % negativeX1Average, (10, 105), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+        cv2.putText(img, "y1: %.4f" % negativeY1Average, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+        cv2.putText(img, "x2: %.4f" % negativeX2Average, (10, 135), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+        cv2.putText(img, "y2: %.4f" % negativeY2Average, (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
 
         cv2.line(img, (int(negativeX1Average), int(negativeY1Average)), (int(negativeX2Average), int(negativeY2Average)), color, thickness + 5)
 
@@ -144,8 +152,34 @@ def draw_lines(img, lines, color = [52, 152, 219], thickness = 2):
         # left lane
         positiveSlopeAverage = positiveSlopeSum / positiveLines
 
-        if(negativeSlopeAverage < -1 or positiveSlopeAverage > 1):
-            cv2.putText(img, "DEPARTING LANE", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 000, 000), 2)
+        laneBias = negativeSlopeAverage + positiveSlopeAverage
+
+        steeringColor = (255, 000, 000)
+
+        if(laneBias > 0.2):
+            steeringColor = (255, 255, 000)
+            cv2.putText(img, "Suggested correction: VEER LEFT", (10, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+        elif(laneBias < -0.2):
+            steeringColor = (255, 255, 000)
+            cv2.putText(img, "Suggested correction: VEER RIGHT", (10, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+        else:
+            steeringColor = (000, 255, 000)
+            cv2.putText(img, "Suggested correction: CONT STRAIGHT", (10, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 255), 2)
+
+        cv2.line(img, (10, 180), (210, 180), (255, 255, 255), 2)
+
+        if(not np.isinf(laneBias)):
+            scalingFactor = 100 / (abs(negativeSlopeAverage) + abs(positiveSlopeAverage))
+
+            drivingXPosition = int(laneBias * scalingFactor) + 100
+
+            cv2.circle(img, ((10 + drivingXPosition), 180), 8, steeringColor, 5)
+        else:
+            cv2.circle(img, ((10 + 100), 180), 8, steeringColor, 5)
+
+        if(negativeSlopeAverage < -0.95 or positiveSlopeAverage > 0.95 or negativeSlopeAverage > 0.05 or positiveSlopeAverage < -0.05):
+            cv2.putText(img, "DEPARTING LANE", (10, 195), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 000, 000), 2)
+
 
     #saving just in case - previous implementation
     for line in lines:
@@ -165,7 +199,7 @@ def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
 
 # Python 3 has support for cool math symbols.
 
-def weighted_img(img, initial_img, α=0.8, β=1., λ=0.):
+def weighted_img(img, initial_img, α = 0.8, β = 1., λ = 0.):
     """
     `img` is the output of the hough_lines(), An image with lines drawn on it.
     Should be a blank image (all black) with lines drawn on it.
@@ -191,7 +225,7 @@ def process_frame(image):
     upper_yellow = np.array([30, 255, 255], dtype = "uint8")
 
     mask_yellow = cv2.inRange(img_hsv, lower_yellow, upper_yellow)
-    mask_white = cv2.inRange(gray_image, 210, 255)
+    mask_white = cv2.inRange(gray_image, 205, 255)
     mask_yw = cv2.bitwise_or(mask_white, mask_yellow)
     mask_yw_image = cv2.bitwise_and(gray_image, mask_yw)
 
