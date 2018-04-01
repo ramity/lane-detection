@@ -275,7 +275,7 @@ def process_frame(image):
     return result
 
 first_frame = 1
-white_output = 'testcomplete.mp4'
-clip1 = VideoFileClip("test.mp4")
+white_output = 'bot_lane_change_complete.mp4'
+clip1 = VideoFileClip("bot_lane_change.mp4")
 white_clip = clip1.fl_image(process_frame) #NOTE: this function expects color images!!
 white_clip.write_videofile(white_output, audio = False)
